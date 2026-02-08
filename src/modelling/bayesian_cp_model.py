@@ -3,89 +3,143 @@
 import pymc as pm
 import numpy as np
 import matplotlib.pyplot as plt
+import arviz as az
 
-def bayesian_change_point_model(log_returns, draws=2000, tune=1000, random_seed=42):
+
+# -------------------------------------------------
+# Bayesian Change Point Model
+# -------------------------------------------------
+def bayesian_change_point_model(
+    log_returns,
+    draws=1000,
+    tune=1000,
+    target_accept=0.95,
+    random_seed=42
+):
     """
-    Build and run a Bayesian Change Point model for a 1D time series of log returns.
+    Bayesian Change Point model for 1D stationary time series.
 
     Parameters
     ----------
     log_returns : array-like
-        The time series of log returns.
+        Stationary time series (log returns).
     draws : int
-        Number of MCMC samples.
+        Number of posterior samples.
     tune : int
         Number of tuning steps.
+    target_accept : float
+        Target acceptance probability for NUTS sampler.
     random_seed : int
-        Random seed for reproducibility.
+        Seed for reproducibility.
 
     Returns
     -------
-    trace : pm.backends.base.MultiTrace
-        The posterior samples from the model.
-    model : pm.Model
-        The PyMC model object.
+    trace : arviz.InferenceData
+        Posterior samples.
+    model : pymc.Model
+        PyMC model object.
     """
-    log_returns = np.array(log_returns)
 
-    with pm.Model() as model:
-        # -----------------------------
-        # 1. Switch point (change point)
-        # -----------------------------
-        tau = pm.DiscreteUniform("tau", lower=0, upper=len(log_returns)-1)
+    # -----------------------------
+    # Input Validation
+    # -----------------------------
+    if log_returns is None:
+        raise ValueError("log_returns cannot be None")
 
-        # -----------------------------
-        # 2. Pre- and post-change means
-        # -----------------------------
-        mu1 = pm.Normal("mu1", mu=0, sigma=0.05)
-        mu2 = pm.Normal("mu2", mu=0, sigma=0.05)
+    log_returns = np.asarray(log_returns)
 
-        # -----------------------------
-        # 3. Shared standard deviation
-        # -----------------------------
-        sigma = pm.HalfNormal("sigma", sigma=0.05)
+    if log_returns.ndim != 1:
+        raise ValueError("log_returns must be a 1D array")
 
-        # -----------------------------
-        # 4. Likelihood using switch
-        # -----------------------------
-        idx = np.arange(len(log_returns))
-        mu = pm.math.switch(tau >= idx, mu1, mu2)
-        y_obs = pm.Normal("y_obs", mu=mu, sigma=sigma, observed=log_returns)
+    if len(log_returns) < 10:
+        raise ValueError("Time series too short for change point detection")
 
-        # -----------------------------
-        # 5. Sample posterior
-        # -----------------------------
-        trace = pm.sample(draws=draws, tune=tune, random_seed=random_seed, target_accept=0.95)
+    if np.isnan(log_returns).any():
+        raise ValueError("log_returns contains NaN values")
+
+    n = len(log_returns)
+
+    try:
+        with pm.Model() as model:
+
+            # Change point location
+            tau = pm.DiscreteUniform("tau", lower=0, upper=n - 1)
+
+            # Means before and after change
+            mu1 = pm.Normal("mu1", mu=0, sigma=1)
+            mu2 = pm.Normal("mu2", mu=0, sigma=1)
+
+            # Shared noise
+            sigma = pm.HalfNormal("sigma", sigma=1)
+
+            # Mean switching logic
+            idx = np.arange(n)
+            mu = pm.math.switch(tau >= idx, mu1, mu2)
+
+            # Likelihood
+            pm.Normal("obs", mu=mu, sigma=sigma, observed=log_returns)
+
+            # Sampling
+            trace = pm.sample(
+                draws=draws,
+                tune=tune,
+                target_accept=target_accept,
+                random_seed=random_seed,
+                return_inferencedata=True,
+                progressbar=True
+            )
+
+    except Exception as e:
+        raise RuntimeError(f"Bayesian model sampling failed: {e}")
 
     return trace, model
 
 
-# -----------------------------
-# Optional: Plot posterior distributions
-# -----------------------------
+# -------------------------------------------------
+# Diagnostics: Trace Plot
+# -------------------------------------------------
 def plot_trace(trace):
     """
-    Plot trace and posterior distributions for tau, mu1, mu2, and sigma.
+    Plot posterior traces for parameters.
     """
-    pm.plot_trace(trace)
-    plt.show()
+    if trace is None:
+        raise ValueError("trace cannot be None")
+
+    try:
+        az.plot_trace(trace)
+        plt.tight_layout()
+        plt.show()
+    except Exception as e:
+        raise RuntimeError(f"Trace plotting failed: {e}")
 
 
+# -------------------------------------------------
+# Diagnostics: Change Point Distribution
+# -------------------------------------------------
 def plot_change_point_distribution(trace, dates):
     """
-    Plot posterior distribution of tau over time series dates.
-    
+    Visualize posterior distribution of change point.
+
     Parameters
     ----------
-    trace : pm.backends.base.MultiTrace
-        The posterior samples
+    trace : arviz.InferenceData
     dates : array-like
-        Corresponding dates for the time series
+        Date index corresponding to series
     """
-    tau_samples = trace.posterior["tau"].values.flatten()
-    plt.figure(figsize=(14,5))
-    plt.hist(dates[tau_samples], bins=50, color='orange', alpha=0.7)
-    plt.title("Posterior Distribution of Change Point (tau)")
-    plt.xlabel("Date")
-    plt.ylabel("Frequency")
-    plt.show()
+
+    if trace is None:
+        raise ValueError("trace cannot be None")
+
+    try:
+        tau_samples = trace.posterior["tau"].values.flatten()
+
+        plt.figure(figsize=(14, 5))
+        plt.hist(dates[tau_samples], bins=50)
+        plt.title("Posterior Distribution of Change Point (tau)")
+        plt.xlabel("Date")
+        plt.ylabel("Frequency")
+        plt.grid(True)
+        plt.show()
+
+    except Exception as e:
+        raise RuntimeError(f"Change point distribution plot failed: {e}")
