@@ -3,143 +3,128 @@
 import pymc as pm
 import numpy as np
 import matplotlib.pyplot as plt
-import arviz as az
 
-
-# -------------------------------------------------
-# Bayesian Change Point Model
-# -------------------------------------------------
 def bayesian_change_point_model(
     log_returns,
-    draws=1000,
+    draws=2000,
     tune=1000,
-    target_accept=0.95,
-    random_seed=42
+    target_accept=0.9,
+    random_seed=42,
+    downsample_step=None
 ):
     """
-    Bayesian Change Point model for 1D stationary time series.
+    Build and run a Bayesian Change Point model for a 1D time series of log returns.
 
     Parameters
     ----------
     log_returns : array-like
-        Stationary time series (log returns).
+        The time series of log returns.
     draws : int
-        Number of posterior samples.
+        Number of MCMC samples.
     tune : int
         Number of tuning steps.
     target_accept : float
-        Target acceptance probability for NUTS sampler.
+        Target acceptance rate for NUTS sampler.
     random_seed : int
-        Seed for reproducibility.
+        Random seed for reproducibility.
+    downsample_step : int, optional
+        If set, use every N-th point for faster computation.
 
     Returns
     -------
-    trace : arviz.InferenceData
-        Posterior samples.
-    model : pymc.Model
-        PyMC model object.
+    trace : pm.backends.base.MultiTrace
+        The posterior samples from the model.
+    model : pm.Model
+        The PyMC model object.
+    used_series : np.ndarray
+        The series actually used (after optional downsampling).
     """
-
-    # -----------------------------
-    # Input Validation
-    # -----------------------------
-    if log_returns is None:
-        raise ValueError("log_returns cannot be None")
-
-    log_returns = np.asarray(log_returns)
-
-    if log_returns.ndim != 1:
-        raise ValueError("log_returns must be a 1D array")
-
-    if len(log_returns) < 10:
-        raise ValueError("Time series too short for change point detection")
-
-    if np.isnan(log_returns).any():
-        raise ValueError("log_returns contains NaN values")
-
-    n = len(log_returns)
-
     try:
-        with pm.Model() as model:
+        log_returns = np.array(log_returns)
+        if log_returns.ndim != 1:
+            raise ValueError("log_returns must be a 1D array")
 
-            # Change point location
-            tau = pm.DiscreteUniform("tau", lower=0, upper=n - 1)
+        # Downsample if requested
+        if downsample_step is not None and downsample_step > 1:
+            used_series = log_returns[::downsample_step]
+        else:
+            used_series = log_returns.copy()
 
-            # Means before and after change
-            mu1 = pm.Normal("mu1", mu=0, sigma=1)
-            mu2 = pm.Normal("mu2", mu=0, sigma=1)
-
-            # Shared noise
-            sigma = pm.HalfNormal("sigma", sigma=1)
-
-            # Mean switching logic
-            idx = np.arange(n)
-            mu = pm.math.switch(tau >= idx, mu1, mu2)
-
-            # Likelihood
-            pm.Normal("obs", mu=mu, sigma=sigma, observed=log_returns)
-
-            # Sampling
-            trace = pm.sample(
-                draws=draws,
-                tune=tune,
-                target_accept=target_accept,
-                random_seed=random_seed,
-                return_inferencedata=True,
-                progressbar=True
-            )
+        n_points = len(used_series)
+        if n_points < 2:
+            raise ValueError("Time series too short after downsampling")
 
     except Exception as e:
-        raise RuntimeError(f"Bayesian model sampling failed: {e}")
+        raise RuntimeError(f"Input validation failed: {e}")
 
-    return trace, model
+    # -----------------------------
+    # Build Bayesian Change Point Model
+    # -----------------------------
+    with pm.Model() as model:
+        # 1. Switch point
+        tau = pm.DiscreteUniform("tau", lower=0, upper=n_points-1)
+
+        # 2. Pre- and post-change means
+        mu1 = pm.Normal("mu1", mu=0, sigma=0.05)
+        mu2 = pm.Normal("mu2", mu=0, sigma=0.05)
+
+        # 3. Shared standard deviation
+        sigma = pm.HalfNormal("sigma", sigma=0.05)
+
+        # 4. Likelihood with switch
+        idx = np.arange(n_points)
+        mu = pm.math.switch(tau >= idx, mu1, mu2)
+        y_obs = pm.Normal("y_obs", mu=mu, sigma=sigma, observed=used_series)
+
+        # 5. Sample posterior
+        trace = pm.sample(
+            draws=draws,
+            tune=tune,
+            random_seed=random_seed,
+            target_accept=target_accept,
+            cores=1
+        )
+
+    return trace, model, used_series
 
 
-# -------------------------------------------------
-# Diagnostics: Trace Plot
-# -------------------------------------------------
+# -----------------------------
+# Optional: Plot posterior distributions
+# -----------------------------
 def plot_trace(trace):
     """
-    Plot posterior traces for parameters.
+    Plot trace and posterior distributions for tau, mu1, mu2, and sigma.
     """
-    if trace is None:
-        raise ValueError("trace cannot be None")
-
     try:
-        az.plot_trace(trace)
-        plt.tight_layout()
+        pm.plot_trace(trace)
         plt.show()
     except Exception as e:
-        raise RuntimeError(f"Trace plotting failed: {e}")
+        print(f"Trace plotting failed: {e}")
 
 
-# -------------------------------------------------
-# Diagnostics: Change Point Distribution
-# -------------------------------------------------
 def plot_change_point_distribution(trace, dates):
     """
-    Visualize posterior distribution of change point.
+    Plot posterior distribution of tau over time series dates.
 
     Parameters
     ----------
-    trace : arviz.InferenceData
+    trace : pm.backends.base.MultiTrace
+        The posterior samples
     dates : array-like
-        Date index corresponding to series
+        Corresponding dates for the time series
     """
-
-    if trace is None:
-        raise ValueError("trace cannot be None")
-
     try:
         tau_samples = trace.posterior["tau"].values.flatten()
+        if len(tau_samples) != len(dates):
+            # If downsampled, align with the actual used series length
+            dates = dates[:len(tau_samples)]
 
-        plt.figure(figsize=(14, 5))
-        plt.hist(dates[tau_samples], bins=50)
+        plt.figure(figsize=(14,5))
+        plt.hist(dates[tau_samples], bins=50, color='orange', alpha=0.7)
         plt.title("Posterior Distribution of Change Point (tau)")
         plt.xlabel("Date")
         plt.ylabel("Frequency")
-        plt.grid(True)
         plt.show()
 
     except Exception as e:
-        raise RuntimeError(f"Change point distribution plot failed: {e}")
+        print(f"Change point distribution plotting failed: {e}")
