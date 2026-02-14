@@ -1,23 +1,64 @@
-import numpy as np
+"""
+preprocess.py
+
+Responsible for preparing Brent oil price data for Bayesian change point modeling.
+Includes:
+- Log returns calculation
+- Optional aggregation (daily, weekly, monthly)
+- Data validation
+"""
+
 import pandas as pd
+import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
+class PreprocessingError(Exception):
+    """Raised when preprocessing fails."""
+    pass
 
 
-def compute_log_returns(df: pd.DataFrame, price_col: str = "Price") -> pd.DataFrame:
+def prepare_model_data(df: pd.DataFrame, aggregate: str = None) -> pd.DataFrame:
     """
-    Compute log returns from a price series with validation.
+    Prepare Brent oil price data for Bayesian change point modeling.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame with columns 'Date' and 'Price'
+    aggregate : str, optional
+        Resampling frequency for aggregation:
+        'D' = daily, 'W' = weekly, 'M' = monthly, None = raw data
+
+    Returns
+    -------
+    pd.DataFrame
+        Columns: ['Date', 'Price', 'LogReturn']
     """
+    try:
+        if "Date" not in df.columns or "Price" not in df.columns:
+            raise PreprocessingError("Input DataFrame must contain 'Date' and 'Price'")
 
-    if df is None or df.empty:
-        raise ValueError("Input dataframe is empty.")
+        model_df = df.copy()
 
-    if price_col not in df.columns:
-        raise ValueError(f"Column '{price_col}' not found in dataframe.")
+        # Optional aggregation
+        if aggregate is not None:
+            model_df = model_df.set_index("Date").resample(aggregate).last().dropna().reset_index()
+            logger.info("Aggregated data using '%s' frequency. New shape: %s", aggregate, model_df.shape)
 
-    if (df[price_col] <= 0).any():
-        raise ValueError("Price values must be positive to compute log returns.")
+        # Validate Price column
+        if model_df["Price"].isna().any() or (model_df["Price"] <= 0).any():
+            raise PreprocessingError("Price column contains NaN or non-positive values")
 
-    df = df.copy()
-    df["LogReturn"] = np.log(df[price_col] / df[price_col].shift(1))
-    df = df.dropna().reset_index(drop=True)
+        # Compute log returns
+        model_df["LogReturn"] = np.log(model_df["Price"] / model_df["Price"].shift(1))
+        model_df = model_df.dropna().reset_index(drop=True)
 
-    return df
+        logger.info("Computed log returns. Final modeling dataset shape: %s", model_df.shape)
+        return model_df
+
+    except Exception:
+        logger.exception("Failed preprocessing Brent oil data")
+        raise
