@@ -2,7 +2,10 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api_endpoints import router as api_router
+try:
+    from .api_endpoints import router as api_router
+except ImportError:
+    from api_endpoints import router as api_router
 
 app = FastAPI(title="Brent Oil Change Point API")
 
