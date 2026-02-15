@@ -30,7 +30,7 @@ def prepare_model_data(df: pd.DataFrame, aggregate: str = None) -> pd.DataFrame:
         DataFrame with columns 'Date' and 'Price'
     aggregate : str, optional
         Resampling frequency for aggregation:
-        'D' = daily, 'W' = weekly, 'M' = monthly, None = raw data
+        'D' = daily, 'W' = weekly, 'M' or 'ME' = month-end, None = raw data
 
     Returns
     -------
@@ -43,9 +43,10 @@ def prepare_model_data(df: pd.DataFrame, aggregate: str = None) -> pd.DataFrame:
 
         model_df = df.copy()
 
-        # Optional aggregation
+        # Optional aggregation (pandas 2.0+ uses 'ME' for month-end, not 'M')
         if aggregate is not None:
-            model_df = model_df.set_index("Date").resample(aggregate).last().dropna().reset_index()
+            freq = "ME" if aggregate == "M" else aggregate
+            model_df = model_df.set_index("Date").resample(freq).last().dropna().reset_index()
             logger.info("Aggregated data using '%s' frequency. New shape: %s", aggregate, model_df.shape)
 
         # Validate Price column
