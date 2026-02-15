@@ -1,5 +1,11 @@
+# Brent Oil Price Analysis Project
 
 [![Brent Oil CI](https://github.com/Deregit2025/oil-price-changepoint-analysis-ml-dashboard/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Deregit2025/oil-price-changepoint-analysis-ml-dashboard/actions/workflows/ci.yml)
+
+**CI/CD:** The badge above shows the status of the [GitHub Actions workflow](https://github.com/Deregit2025/oil-price-changepoint-analysis-ml-dashboard/actions/workflows/ci.yml). On every push and pull request to `main` (and `task-3`), the pipeline runs **backend tests** (pytest) and **frontend build** (React + Vite). Green = passing.
+
+---
+
 ### **2️⃣ README.md**
 
 This README is **medium-blog style**, explaining the project, tasks, and structure:
