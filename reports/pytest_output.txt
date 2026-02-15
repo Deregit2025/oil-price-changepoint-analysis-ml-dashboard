@@ -1,0 +1,60 @@
+Unit Test Results — pytest output (Brent Oil Change Point Analysis)
+====================================================================
+
+Command run: python -m pytest tests/ -v -m "not slow" --tb=short
+
+============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-9.0.2, pluggy-1.6.0
+cachedir: .pytest_cache
+rootdir: C:\Users\derej\Desktop\Kifya\changepoint_analysis
+plugins: anyio-4.12.1
+collecting ... collected 44 items / 1 deselected / 43 selected
+
+tests/test_api.py::test_historical_prices_returns_200_and_list PASSED    [  2%]
+tests/test_api.py::test_historical_prices_records_have_date_and_price PASSED [  4%]
+tests/test_api.py::test_historical_prices_404_when_file_missing PASSED   [  6%]
+tests/test_api.py::test_historical_prices_drops_invalid_dates PASSED     [  9%]
+tests/test_api.py::test_change_points_returns_200_and_list PASSED        [ 11%]
+tests/test_api.py::test_change_points_records_have_required_fields PASSED [ 13%]
+tests/test_api.py::test_change_points_404_when_file_missing PASSED       [ 16%]
+tests/test_api.py::test_change_points_400_when_columns_missing PASSED    [ 18%]
+tests/test_api.py::test_api_prefix PASSED                                [ 20%]
+tests/test_data_loading.py::test_load_valid_csv PASSED                   [ 23%]
+tests/test_data_loading.py::test_load_valid_csv_mixed_date_formats PASSED [ 25%]
+tests/test_data_loading.py::test_load_valid_csv_sorted_ascending PASSED  [ 27%]
+tests/test_data_loading.py::test_load_valid_csv_whitespace_columns PASSED [ 30%]
+tests/test_data_loading.py::test_file_not_found PASSED                   [ 32%]
+tests/test_data_loading.py::test_missing_columns PASSED                  [ 34%]
+tests/test_data_loading.py::test_missing_date_column_only PASSED         [ 37%]
+tests/test_data_loading.py::test_invalid_date PASSED                     [ 39%]
+tests/test_data_loading.py::test_invalid_price PASSED                    [ 41%]
+tests/test_data_loading.py::test_price_with_empty_cell PASSED            [ 44%]
+tests/test_data_processing.py::test_prepare_model_data_returns_date_price_logreturn PASSED [ 46%]
+tests/test_data_processing.py::test_prepare_model_data_logreturn_formula PASSED [ 48%]
+tests/test_data_processing.py::test_prepare_model_data_preserves_dates_and_prices PASSED [ 51%]
+tests/test_data_processing.py::test_prepare_model_data_single_row_dropped PASSED [ 53%]
+tests/test_data_processing.py::test_prepare_model_data_weekly_aggregation PASSED [ 55%]
+tests/test_data_processing.py::test_prepare_model_data_monthly_aggregation PASSED [ 58%]
+tests/test_data_processing.py::test_prepare_model_data_aggregate_none_same_as_omit PASSED [ 60%]
+tests/test_data_processing.py::test_prepare_model_data_missing_date_column PASSED [ 62%]
+tests/test_data_processing.py::test_prepare_model_data_missing_price_column PASSED [ 65%]
+tests/test_data_processing.py::test_prepare_model_data_nan_price PASSED  [ 67%]
+tests/test_data_processing.py::test_prepare_model_data_zero_price PASSED [ 69%]
+tests/test_data_processing.py::test_prepare_model_data_negative_price PASSED [ 72%]
+tests/test_data_processing.py::test_prepare_model_data_does_not_mutate_input PASSED [ 74%]
+tests/test_modelling.py::test_build_change_point_report_returns_expected_keys PASSED [ 76%]
+tests/test_modelling.py::test_build_change_point_report_uses_median_tau PASSED [ 79%]
+tests/test_modelling.py::test_build_change_point_report_clamps_tau_to_bounds PASSED [ 81%]
+tests/test_modelling.py::test_build_change_point_report_mean_before_after_delta PASSED [ 83%]
+tests/test_modelling.py::test_build_change_point_report_confidence_between_0_and_1 PASSED [ 86%]
+tests/test_modelling.py::test_build_change_point_report_empty_tau_samples_raises PASSED [ 88%]
+tests/test_modelling.py::test_build_change_point_report_percent_change_when_mean_before_zero PASSED [ 90%]
+tests/test_modelling.py::test_export_detected_event_csv_creates_file PASSED [ 93%]
+tests/test_modelling.py::test_export_detected_event_csv_has_expected_columns PASSED [ 95%]
+tests/test_modelling.py::test_export_detected_event_csv_content_matches_report PASSED [ 97%]
+tests/test_modelling.py::test_export_detected_event_csv_creates_parent_dirs PASSED [100%]
+
+================ 43 passed, 1 deselected, 4 warnings in 1.36s =================
+
+Summary: 43 tests passed; 1 test deselected (slow MCMC test).
+Test files: test_data_loading.py, test_data_processing.py, test_modelling.py, test_api.py.
