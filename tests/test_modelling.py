@@ -106,8 +106,8 @@ def test_build_change_point_report_mean_before_after_delta():
     tau_samples = np.array([4] * 100)
     trace = _make_mock_trace(np.ones(100) * 0.01, np.ones(100) * 0.03)
     report = build_change_point_report(df, tau_samples, trace)
-    assert report["mean_before"] == 0.01
-    assert report["mean_after"] == 0.03
+    assert report["mean_before"] == pytest.approx(0.01)
+    assert report["mean_after"] == pytest.approx(0.03)
     assert report["delta"] == pytest.approx(0.02)
 
 
