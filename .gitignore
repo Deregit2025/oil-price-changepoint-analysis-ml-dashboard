@@ -19,8 +19,6 @@ pip-log.txt
 .vscode/
 
 # Data folders
-/data/processed/
-*.csv
 *.tsv
 
 # MacOS
@@ -44,4 +42,4 @@ instance/
 
 # Reports
 *.pdf
-data/
+
