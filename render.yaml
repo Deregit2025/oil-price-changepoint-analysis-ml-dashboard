@@ -1,0 +1,22 @@
+# Render Blueprint: Brent Oil Change Point Analysis
+# https://render.com/docs/blueprint-spec
+# Connect this repo in Render Dashboard: New > Blueprint > connect repo
+
+services:
+  # Backend API (FastAPI)
+  - type: web
+    name: brent-oil-api
+    runtime: python
+    buildCommand: pip install -r requirements-ci.txt
+    startCommand: uvicorn src.dashboard.backend.app:app --host 0.0.0.0 --port $PORT
+
+  # Frontend (React + Vite static site)
+  - type: web
+    name: brent-oil-dashboard
+    runtime: static
+    buildCommand: cd src/dashboard/frontend && npm install && npm run build
+    staticPublishPath: src/dashboard/frontend/dist
+    envVars:
+      # Set this to your backend URL after the API is deployed, e.g. https://brent-oil-api.onrender.com
+      - key: VITE_API_URL
+        sync: false
