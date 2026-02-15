@@ -10,8 +10,7 @@ import {
   ResponsiveContainer
 } from "recharts";
 import Filters from "./Filters";
-
-const API_BASE = "http://127.0.0.1:8000/api";
+import { API_BASE } from "../config";
 
 function EventHighlight() {
   const [events, setEvents] = useState([]);

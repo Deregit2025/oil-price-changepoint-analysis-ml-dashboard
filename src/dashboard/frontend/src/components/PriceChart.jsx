@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 import Filters from "./Filters";
+import { API_BASE } from "../config";
 
 function PriceChart() {
   const [data, setData] = useState([]);
@@ -9,7 +10,7 @@ function PriceChart() {
 
   useEffect(() => {
     axios
-      .get("http://127.0.0.1:8000/api/historical_prices")
+      .get(`${API_BASE}/historical_prices`)
       .then((res) => {
         setData(res.data);
         setFilteredData(res.data);
