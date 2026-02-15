@@ -1,4 +1,5 @@
 
+[![Brent Oil CI](https://github.com/Deregit2025/oil-price-changepoint-analysis-ml-dashboard/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Deregit2025/oil-price-changepoint-analysis-ml-dashboard/actions/workflows/ci.yml)
 ### **2️⃣ README.md**
 
 This README is **medium-blog style**, explaining the project, tasks, and structure:
