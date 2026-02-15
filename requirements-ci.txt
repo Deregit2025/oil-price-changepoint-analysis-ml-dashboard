@@ -1,0 +1,8 @@
+# Minimal dependencies for CI (Linux). Excludes Windows-only packages like pywinpty.
+# Use: pip install -r requirements-ci.txt
+pandas>=2.0
+numpy>=1.24
+pytest>=7.0
+fastapi>=0.100
+uvicorn[standard]>=0.22
+httpx>=0.24
