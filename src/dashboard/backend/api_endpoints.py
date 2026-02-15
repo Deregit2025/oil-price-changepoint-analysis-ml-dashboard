@@ -31,6 +31,8 @@ def get_change_points():
     except FileNotFoundError:
         print(f"File not found: {csv_path}")
         raise HTTPException(status_code=404, detail="Detected events file not found")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -63,6 +65,8 @@ def get_historical_prices():
     except FileNotFoundError:
         print(f"File not found: {csv_path}")
         raise HTTPException(status_code=404, detail="Historical prices file not found")
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Error reading historical prices: {e}")
         raise HTTPException(status_code=500, detail=str(e))
