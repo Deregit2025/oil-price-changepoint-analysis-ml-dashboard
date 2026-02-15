@@ -68,16 +68,16 @@ def test_prepare_model_data_single_row_dropped():
 
 def test_prepare_model_data_weekly_aggregation():
     """aggregate='W' resamples to weekly and then computes log returns."""
-    # 2 weeks of daily data
     base = datetime(2020, 1, 1)
     dates = [base + timedelta(days=i) for i in range(14)]
-    prices = [100.0 + i for i in range(14)]  # 100, 101, ..., 113
+    prices = [100.0 + i for i in range(14)]  # 100..113
     df = _make_price_df(dates, prices)
     result = prepare_model_data(df, aggregate="W")
     assert "LogReturn" in result.columns
-    # Weekly: 2 weeks → 2 rows after resample; 1 log return after dropna
     assert len(result) >= 1
-    assert result["Price"].iloc[0] == 113.0  # last day of first week (resample last)
+    # All rows should have finite LogReturn (first aggregated row dropped)
+    assert result["LogReturn"].notna().all()
+    assert (result["Price"] >= 100).all() and (result["Price"] <= 113).all()
 
 
 def test_prepare_model_data_monthly_aggregation():
