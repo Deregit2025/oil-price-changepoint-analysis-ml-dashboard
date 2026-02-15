@@ -4,6 +4,8 @@
 
 **CI/CD:** The badge above shows the status of the [GitHub Actions workflow](https://github.com/Deregit2025/oil-price-changepoint-analysis-ml-dashboard/actions/workflows/ci.yml). On every push and pull request to `main` (and `task-3`), the pipeline runs **backend tests** (pytest) and **frontend build** (React + Vite). Green = passing.
 
+**Deploy:** To deploy the backend and frontend on [Render](https://render.com), use the [Render Blueprint](https://render.com/docs/blueprint-spec) in this repo: connect the repo in Render → New → Blueprint. See **[docs/deploy-render.md](docs/deploy-render.md)** for step-by-step instructions.
+
 ---
 
 ### **2️⃣ README.md**
